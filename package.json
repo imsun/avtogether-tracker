@@ -1,0 +1,7 @@
+{
+  "name": "avtogether-tracker",
+  "version": "0.0.1",
+  "dependencies": {
+    "bittorrent-tracker": "^8.0.7"
+  }
+}
