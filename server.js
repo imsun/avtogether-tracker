@@ -31,44 +31,7 @@ var httpServer = http.createServer(function(req, res) {
 		return count
 	}
 
-	function groupByClient () {
-		var clients = {}
-		for (var key in allPeers) {
-			if (allPeers.hasOwnProperty(key)) {
-				var peer = allPeers[key]
-
-				if (!clients[peer.client.client]) {
-					clients[peer.client.client] = {}
-				}
-				var client = clients[peer.client.client]
-				// If the client is not known show 8 chars from peerId as version
-				var version = peer.client.version || new Buffer(peer.peerId, 'hex').toString().substring(0, 8)
-				if (!client[version]) {
-					client[version] = 0
-				}
-				client[version]++
-			}
-		}
-		return clients
-	}
-
-	function printClients (clients) {
-		var html = '<ul>\n'
-		for (var name in clients) {
-			if (clients.hasOwnProperty(name)) {
-				var client = clients[name]
-				for (var version in client) {
-					if (client.hasOwnProperty(version)) {
-						html += '<li><strong>' + name + '</strong> ' + version + ' : ' + client[version] + '</li>\n'
-					}
-				}
-			}
-		}
-		html += '</ul>'
-		return html
-	}
-
-	if (req.method === 'GET' && (req.url === '/stats' || req.url === '/stats.json')) {
+	if (req.method === 'GET' && req.url === '/stats') {
 		infoHashes.forEach(function (infoHash) {
 			var peers = self.torrents[infoHash].peers
 			var keys = Object.keys(peers)
@@ -94,8 +57,6 @@ var httpServer = http.createServer(function(req, res) {
 				} else {
 					allPeers[peerId].leecher = true
 				}
-				allPeers[peerId].peerId = peer.peerId
-				allPeers[peerId].client = peerid(peer.peerId)
 			})
 		})
 
@@ -105,33 +66,13 @@ var httpServer = http.createServer(function(req, res) {
 		var isIPv4 = function (peer) { return peer.ipv4 }
 		var isIPv6 = function (peer) { return peer.ipv6 }
 
-		var stats = {
-			torrents: infoHashes.length,
-			activeTorrents: activeTorrents,
-			peersAll: Object.keys(allPeers).length,
-			peersSeederOnly: countPeers(isSeederOnly),
-			peersLeecherOnly: countPeers(isLeecherOnly),
-			peersSeederAndLeecher: countPeers(isSeederAndLeecher),
-			peersIPv4: countPeers(isIPv4),
-			peersIPv6: countPeers(isIPv6),
-			clients: groupByClient()
-		}
-
-		if (req.url === '/stats.json' || req.headers['accept'] === 'application/json') {
-			res.write(JSON.stringify(stats))
-			res.end()
-		} else if (req.url === '/stats') {
-			res.end('<h1>' + stats.torrents + ' torrents (' + stats.activeTorrents + ' active)</h1>\n' +
-				'<h2>Connected Peers: ' + stats.peersAll + '</h2>\n' +
-				'<h3>Peers Seeding Only: ' + stats.peersSeederOnly + '</h3>\n' +
-				'<h3>Peers Leeching Only: ' + stats.peersLeecherOnly + '</h3>\n' +
-				'<h3>Peers Seeding & Leeching: ' + stats.peersSeederAndLeecher + '</h3>\n' +
-				'<h3>IPv4 Peers: ' + stats.peersIPv4 + '</h3>\n' +
-				'<h3>IPv6 Peers: ' + stats.peersIPv6 + '</h3>\n' +
-				'<h3>Clients:</h3>\n' +
-				printClients(stats.clients)
-			)
-		}
+		res.end('<h1>' + infoHashes.length + ' torrents (' + activeTorrents + ' active)</h1>\n' +
+			'<h2>Connected Peers: ' + Object.keys(allPeers).length + '</h2>\n' +
+			'<h3>Peers Seeding Only: ' + countPeers(isSeederOnly) + '</h3>\n' +
+			'<h3>Peers Leeching Only: ' + countPeers(isLeecherOnly) + '</h3>\n' +
+			'<h3>Peers Seeding & Leeching: ' + countPeers(isSeederAndLeecher) + '</h3>\n' +
+			'<h3>IPv4 Peers: ' + countPeers(isIPv4) + '</h3>\n' +
+			'<h3>IPv6 Peers: ' + countPeers(isIPv6) + '</h3>\n')
 	}
 	res.end(JSON.stringify({
 		"runtime": "nodejs-" + process.version,
