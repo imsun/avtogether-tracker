@@ -8,65 +8,65 @@ var server = new Server({
 	ws: false, // enable websocket server? [default=true]
 	stats: false // enable web-based statistics? [default=true]
 })
+var self = server
+
+function countPeers (filterFunction) {
+	var count = 0
+	var key
+
+	for (key in allPeers) {
+		if (allPeers.hasOwnProperty(key) && filterFunction(allPeers[key])) {
+			count++
+		}
+	}
+
+	return count
+}
+
+function groupByClient () {
+	var clients = {}
+	for (var key in allPeers) {
+		if (allPeers.hasOwnProperty(key)) {
+			var peer = allPeers[key]
+
+			if (!clients[peer.client.client]) {
+				clients[peer.client.client] = {}
+			}
+			var client = clients[peer.client.client]
+			// If the client is not known show 8 chars from peerId as version
+			var version = peer.client.version || new Buffer(peer.peerId, 'hex').toString().substring(0, 8)
+			if (!client[version]) {
+				client[version] = 0
+			}
+			client[version]++
+		}
+	}
+	return clients
+}
+
+function printClients (clients) {
+	var html = '<ul>\n'
+	for (var name in clients) {
+		if (clients.hasOwnProperty(name)) {
+			var client = clients[name]
+			for (var version in client) {
+				if (client.hasOwnProperty(version)) {
+					html += '<li><strong>' + name + '</strong> ' + version + ' : ' + client[version] + '</li>\n'
+				}
+			}
+		}
+	}
+	html += '</ul>'
+	return html
+}
 
 var httpServer = http.createServer(function(req, res) {
 	console.log('http request:', req.url)
-	var self = server
 
 	// code from bittorrent-tracker/server.js
 	var infoHashes = Object.keys(self.torrents)
 	var activeTorrents = 0
 	var allPeers = {}
-
-	function countPeers (filterFunction) {
-		var count = 0
-		var key
-
-		for (key in allPeers) {
-			if (allPeers.hasOwnProperty(key) && filterFunction(allPeers[key])) {
-				count++
-			}
-		}
-
-		return count
-	}
-
-	function groupByClient () {
-		var clients = {}
-		for (var key in allPeers) {
-			if (allPeers.hasOwnProperty(key)) {
-				var peer = allPeers[key]
-
-				if (!clients[peer.client.client]) {
-					clients[peer.client.client] = {}
-				}
-				var client = clients[peer.client.client]
-				// If the client is not known show 8 chars from peerId as version
-				var version = peer.client.version || new Buffer(peer.peerId, 'hex').toString().substring(0, 8)
-				if (!client[version]) {
-					client[version] = 0
-				}
-				client[version]++
-			}
-		}
-		return clients
-	}
-
-	function printClients (clients) {
-		var html = '<ul>\n'
-		for (var name in clients) {
-			if (clients.hasOwnProperty(name)) {
-				var client = clients[name]
-				for (var version in client) {
-					if (client.hasOwnProperty(version)) {
-						html += '<li><strong>' + name + '</strong> ' + version + ' : ' + client[version] + '</li>\n'
-					}
-				}
-			}
-		}
-		html += '</ul>'
-		return html
-	}
 
 	if (req.method === 'GET' && (req.url === '/stats' || req.url === '/stats.json')) {
 		infoHashes.forEach(function (infoHash) {
@@ -133,7 +133,7 @@ var httpServer = http.createServer(function(req, res) {
 			)
 		}
 	}
-	res.end()
+	res.end('<html><head></head><body><h1>AvTogether Tracker</h1></body></html>')
 })
 
 var socketServer = new WebSocketServer({ server: httpServer })
