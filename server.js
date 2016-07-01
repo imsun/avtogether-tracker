@@ -73,11 +73,12 @@ var httpServer = http.createServer(function(req, res) {
 			'<h3>Peers Seeding & Leeching: ' + countPeers(isSeederAndLeecher) + '</h3>\n' +
 			'<h3>IPv4 Peers: ' + countPeers(isIPv4) + '</h3>\n' +
 			'<h3>IPv6 Peers: ' + countPeers(isIPv6) + '</h3>\n')
+	} else {
+		res.end(JSON.stringify({
+			"runtime": "nodejs-" + process.version,
+			"version": "custom"
+		}))
 	}
-	res.end(JSON.stringify({
-		"runtime": "nodejs-" + process.version,
-		"version": "custom"
-	}))
 })
 
 var socketServer = new WebSocketServer({ server: httpServer })
