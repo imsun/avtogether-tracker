@@ -1,20 +1,8 @@
 var Server = require('bittorrent-tracker').Server
-var http = require('http')
-
-
-var httpServer = http.createServer(function(req, res) {
-	res.statusCode = 200;
-	res.end()
-})
-
-httpServer.listen(80, '0.0.0.0', function() {
-	console.log('listening on http port', 80)
-})
-
 
 var server = new Server({
 	udp: false, // enable udp server? [default=true]
-	http: false, // enable http server? [default=true]
+	http: true, // enable http server? [default=true]
 	ws: true, // enable websocket server? [default=true]
 	stats: true // enable web-based statistics? [default=true]
 })
@@ -34,8 +22,9 @@ server.on('listening', function () {
 	console.log('listening on websocket port:' + server.ws.address().port)
 })
 
+var port = process.env.LEANCLOUD_APP_PORT
 // start tracker server listening! Use 0 to listen on a random free port.
-server.listen(3000)
+server.listen(port)
 
 // listen for individual tracker messages from peers:
 
