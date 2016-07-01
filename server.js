@@ -133,7 +133,10 @@ var httpServer = http.createServer(function(req, res) {
 			)
 		}
 	}
-	res.end('<html><head></head><body><h1>AvTogether Tracker</h1></body></html>')
+	res.end(JSON.stringify({
+		"runtime": "nodejs-" + process.version,
+		"version": "custom"
+	}))
 })
 
 var socketServer = new WebSocketServer({ server: httpServer })
